@@ -1,8 +1,10 @@
+# frozen_string_literal: true
+
 require_relative './constants'
 require_relative 'validations/submit'
 require_relative 'validations/operation'
 require_relative 'lib/operation'
-require "json-schema"
+require 'json-schema'
 require 'sinatra/base'
 require 'sequel'
 require 'sqlite3'
@@ -11,49 +13,57 @@ require 'pry'
 
 class App < Sinatra::Base
   set :root, File.dirname(__FILE__)
+  set :raise_errors, false
+  set :show_exceptions, false
   include Validations::Submit
   include Validations::Operation
   include Lib::Operation
   include Constants
 
-
-  DB = Sequel.connect('sqlite://test.db')
+  DB = Sequel.connect('sqlite://db/test.db')
 
   users = DB[:user]
   operations = DB[:operation]
   products = DB[:product]
-  templates =  DB[:template]
+  templates = DB[:template]
 
   before do
     content_type :json
-    if request.request_method == "POST"
+    if request.request_method == 'POST'
       body_parameters = request.body.read
       params.merge!(JSON.parse(body_parameters))
     end
   end
 
-  post '/submit' do
+  error 404 do
+    "#{request.request_method} #{request.path}"
+  end
 
+  post '/submit' do
     user = users.where(id: params.dig(:user, :id)).first
     operation = operations.where(id: params[:operation_id], user_id: params.dig(:user, :id)).first
     submit_validate!(user, operation, params)
-    
-    DB.transaction do
-      operations.where(id: params[:operation_id], user_id: params
-                .dig(:user, :id))
-                .update(done: true,
-                        write_off: params[:write_off],
-                        check_summ: operation[:check_summ] - params[:write_off])
 
-      @operation_new = operations.where(id: params[:operation_id], user_id: params
-                                 .dig(:user, :id))
-                                 .first
-      users.where(id: params
-           .dig(:user, :id))
-           .update(bonus: user[:bonus] - @operation_new[:write_off] + @operation_new[:cashback])
+    begin
+      DB.transaction do
+        operations.where(id: params[:operation_id], user_id: params
+                  .dig(:user, :id))
+                  .update(done: true,
+                          write_off: params[:write_off],
+                          check_summ: operation[:check_summ] - params[:write_off])
+
+        @operation_new = operations.where(id: params[:operation_id], user_id: params
+                                   .dig(:user, :id))
+                                   .first
+        users.where(id: params
+             .dig(:user, :id))
+             .update(bonus: user[:bonus] - @operation_new[:write_off] + @operation_new[:cashback])
+      end
+    rescue Sequel::DatabaseError => e
+      halt(500, e.message)
     end
 
-    { 
+    {
       status: response.status,
       message: DATA_PROCESSED_SUCCESSFULLY,
       operation: {
@@ -69,28 +79,29 @@ class App < Sinatra::Base
   end
 
   post '/operation' do
-
     user = users.where(id: params[:user_id]).first
     operation_validate!(user, products, params)
 
-
-    
-    operation_id = operations.insert(
-                                      user_id: params[:user_id],
-                                      cashback: cashback_will_add(products, templates, user),
-                                      cashback_percent: cashback_value(products, templates, user),
-                                      discount: total_discount_sum(products, templates, user),
-                                      discount_percent: discount_value(products, templates, user),
-                                      check_summ: total_summ(products, templates, user),
-                                      allowed_write_off: allowed_summ(products, templates, user)
-                                    )
+    begin
+      operation_id = operations.insert(
+        user_id: params[:user_id],
+        cashback: cashback_will_add(products, templates, user),
+        cashback_percent: cashback_value(products, templates, user),
+        discount: total_discount_sum(products, templates, user),
+        discount_percent: discount_value(products, templates, user),
+        check_summ: total_summ(products, templates, user),
+        allowed_write_off: allowed_summ(products, templates, user)
+      )
+    rescue Sequel::DatabaseError => e
+      halt(500, e.message)
+    end
 
     last_opertaion = operations.where(id: operation_id, user_id: params[:user_id]).first
 
-    { 
+    {
       status: response.status,
       user: user_payload(user),
-      operation_id: operation_id,
+      operation_id:,
       summ: last_opertaion[:check_summ].to_f,
       positions: positions_payload(products, templates, user),
       discount: {

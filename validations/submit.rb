@@ -1,7 +1,9 @@
+# frozen_string_literal: true
+
 require_relative '../constants'
 
 module Validations
-  module Submit 
+  module Submit
     include Constants
 
     def submit_validate!(user, operation, params)
@@ -12,11 +14,9 @@ module Validations
     private
 
     def submit_params_validate!(params)
-      begin
-        JSON::Validator.validate!("./request_schemas/submit.json", params)
-      rescue JSON::Schema::ValidationError => e
-        halt(403, e.message)
-      end
+      JSON::Validator.validate!('./request_schemas/submit.json', params)
+    rescue JSON::Schema::ValidationError => e
+      halt(403, e.message)
     end
 
     def submit_db_validate!(user, operation, params)
