@@ -1,5 +1,6 @@
 require_relative 'lib/operation'
 require_relative 'lib/submit'
+require_relative './validation'
 require "json-schema"
 require 'sinatra/base'
 require 'sequel'
@@ -9,6 +10,7 @@ require 'pry'
 
 class App < Sinatra::Base
   set :root, File.dirname(__FILE__)
+  include Validation
   include Operation
   include Submit
 
@@ -29,108 +31,45 @@ class App < Sinatra::Base
 
   post '/submit' do
 
-    binding.pry
-
     begin
       JSON::Validator.validate!("./request_schemas/submit.json", params)
     rescue JSON::Schema::ValidationError => e
       halt(403, e.message)
     end
 
-  #   {    
-  #     "user": {
-  #         "id": 1,
-  #         "template_id": 1,
-  #         "name": "Иван",
-  #         "bonus": "10000.0"
-  #     },
-  #     "operation_id": 18,
-  #     "write_off": 150
-
     user = users.where(id: params.dig(:user, :id)).first
+    operation = operations.where(id: params[:operation_id], user_id: params.dig(:user, :id)).first
+    db_validations_for_submit(user, operation)
     
-    # def operation_suitable?(operations)
-    #   operations.where(id: params[:operation_id], user_id: params.dig(:user, :id)).first.nil?
-    # end
-    
-    # def operation(operations)
-    #   operation_suitable?(operations)
-    # end
-    
-    def write_off_suitable?(user)
-      params[:write_off] <=  user[:bonus]
+    DB.transaction do
+      operations.where(id: params[:operation_id], user_id: params
+                .dig(:user, :id))
+                .update(done: true,
+                        write_off: params[:write_off],
+                        check_summ: operation[:check_summ] - params[:write_off])
+
+      @operation_new = operations.where(id: params[:operation_id], user_id: params
+                                 .dig(:user, :id))
+                                 .first
+      users.where(id: params
+           .dig(:user, :id))
+           .update(bonus: user[:bonus] - @operation_new[:write_off] + @operation_new[:cashback])
     end
-    
-    def write_off(user)
-      write_off_suitable?(user) ? params[:write_off] : halt(500, "my error message")
-    end
-    
+
     { 
       status: response.status,
       message: "Данные успешно обработаны!",
       operation: {
         user_id: params.dig(:user, :id),
-        cashback: nil,
-        cashback_percent: nil,
-        discount: nil,
-        discount_percent: nil,
-        write_off: write_off(user),
-        check_summ: nil
+        cashback: @operation_new[:cashback].to_i,
+        cashback_percent: @operation_new[:cashback_percent].to_i,
+        discount: @operation_new[:discount].to_f,
+        discount_percent: @operation_new[:discount_percent].to_f,
+        write_off: @operation_new[:write_off].to_i,
+        check_summ: @operation_new[:check_summ].to_i
       }
     }.to_json
   end
-
-  #   {    
-  #     "user": {
-  #         "id": 1,
-  #         "template_id": 1,
-  #         "name": "Иван",
-  #         "bonus": "10000.0"
-  #     },
-  #     "operation_id": 18,
-  #     "write_off": 150
-  # }
-
-  # {
-  #   "status": 200,
-  #   "message": "Данные успешно обработаны!", { Недостаточно баллов для списания! Операция не найдена! Операция уже проведена! клиент не найден! 400 bad request
-  #   "operation": {
-  #       "user_id": 1,
-  #       "cashback": 24,
-  #       "cashback_percent": 0,
-  #       "discount": "6.0",
-  #       "discount_percent": "0.81",
-  #       "write_off": 150,
-  #       "check_summ": 584
-  #   }
-  # }
-
-
-#   {
-#     "user_id": 1,
-#     "positions":[
-#         {
-#             "id": 2,
-#             "price": 50,
-#             "quantity": 2
-#         },
-#         {
-#             "id": 3,
-#             "price": 40,
-#             "quantity": 1
-#         },
-#         {
-#             "id": 4,
-#             "price": 150,
-#             "quantity": 2
-#         }
-#     ]
-# }
-
-
-
-
-
 
   post '/operation' do
 
@@ -140,7 +79,10 @@ class App < Sinatra::Base
       halt(403, e.message)
     end
 
+
+
     user = users.where(id: params[:user_id]).first
+    db_validations_for_operation(user, products)
 
     def product_find(position, products)
       products.where(id: position[:id]).first
