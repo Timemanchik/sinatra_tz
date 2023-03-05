@@ -1,29 +1,43 @@
 GEM
   remote: https://rubygems.org/
   specs:
+    addressable (2.8.1)
+      public_suffix (>= 2.0.2, < 6.0)
     coderay (1.1.3)
+    json-schema (3.0.0)
+      addressable (>= 2.8)
     method_source (1.0.0)
     nio4r (2.5.8)
     pry (0.14.2)
       coderay (~> 1.1)
       method_source (~> 1.0)
+    public_suffix (5.0.1)
     puma (6.1.1)
       nio4r (~> 2.0)
-    rack (3.0.4.2)
+    rack (1.6.13)
+    rack-protection (1.5.5)
+      rack
     sequel (5.66.0)
-    sinatra (1.0)
-      rack (>= 1.0)
+    sinatra (1.4.8)
+      rack (~> 1.5)
+      rack-protection (~> 1.4)
+      tilt (>= 1.3, < 3)
+    sinatra-param (1.6.0)
+      sinatra (>= 1.3)
     sqlite3 (1.6.1-x86_64-darwin)
+    tilt (2.1.0)
 
 PLATFORMS
   x86_64-darwin-22
 
 DEPENDENCIES
+  json-schema
   pry
   puma
   sequel
   sinatra
+  sinatra-param
   sqlite3
 
 BUNDLED WITH
-   2.4.6
+   2.4.1

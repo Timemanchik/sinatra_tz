@@ -1,0 +1,27 @@
+{
+  "type": "object",
+  "required": ["user_id", "positions"],
+  "properties": {
+    "user_id": {
+      "type": "integer"
+    },
+    "positions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "price", "quantity"],
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "price": {
+            "type": "integer"
+          },
+          "quantity": {
+            "type": "integer"
+          }
+        }
+      }
+    }
+  }
+}

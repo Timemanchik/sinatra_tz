@@ -2,8 +2,9 @@
 
 source "https://rubygems.org"
 
-gem 'sinatra' 
-gem 'puma'
-gem 'sqlite3'
-gem 'sequel'
+gem 'json-schema'
 gem 'pry'
+gem 'puma'
+gem 'sequel'
+gem 'sinatra'
+gem 'sqlite3'
