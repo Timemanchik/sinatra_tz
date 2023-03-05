@@ -3,26 +3,32 @@
   "required": ["operation_id", "write_off", "user"],
   "properties": {
     "operation_id": {
-      "type": "integer"
+      "type": "integer",
+      "minimum": 1
     },
     "write_off": {
-      "type": "integer"
+      "type": "integer",
+      "minimum": 0
     },
     "user": {
       "type": "object",
       "properties": {
         "id": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 1
         },
         "template_id": {
-          "type": "integer"
+          "type": "integer",
+          "minimum": 1
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 64
         },
         "bonus": {
           "type": "string",
-          "pattern": "^\\d+\\.*\\d*$"
+          "pattern": "^\\d+\\.*\\d*$",
+          "maxLength": 64
         }
       }
     }
