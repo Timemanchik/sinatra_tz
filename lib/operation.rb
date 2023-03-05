@@ -66,16 +66,16 @@ module Lib
     end
 
     def total_summ(products, templates, user)
-      positions_payload(products, templates, user).reduce(0) { _1 + _2[:price] * _2[:quantity] - _2[:discount_summ] }
+      positions_payload(products, templates, user).reduce(0) { _1 + (_2[:price] * _2[:quantity]) - _2[:discount_summ] }
     end
 
     def total_summ_without_discount(products, templates, user)
-      positions_payload(products, templates, user).reduce(0) { _1 + _2[:price] * _2[:quantity] }
+      positions_payload(products, templates, user).reduce(0) { _1 + (_2[:price] * _2[:quantity]) }
     end
 
     def allowed_summ(products, templates, user)
       total_cost_of_eligible_positions = positions_payload(products, templates, user).reduce(0) do
-        _2[:type] == NOLOYALTY ? _1 : _1 + (_2[:price] * _2[:quantity] - _2[:discount_summ])
+        _2[:type] == NOLOYALTY ? _1 : _1 + ((_2[:price] * _2[:quantity]) - _2[:discount_summ])
       end
       total_cost_of_eligible_positions <= user[:bonus].to_i ? total_cost_of_eligible_positions : user[:bonus].to_i
     end
@@ -101,7 +101,7 @@ module Lib
     def position_cashback_summ(products, templates, user)
       positions_payload(products, templates, user).reduce(0) do
         if _2[:type] == INCREASED_CASHBACK
-          _1 + (_2[:price] * _2[:quantity] - _2[:discount_summ]) * _2[:value].to_f / 100
+          _1 + (((_2[:price] * _2[:quantity]) - _2[:discount_summ]) * _2[:value].to_f / 100)
         else
           _1
         end

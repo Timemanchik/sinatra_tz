@@ -20,10 +20,10 @@ module Validations
     end
 
     def submit_db_validate!(user, operation, params)
-      halt(403, CUSTOMER_NOT_FOUND) if user.nil?
-      halt(403, OPERATION_NOT_FOUND) if operation.nil?
-      halt(403, OPERATION_COMPLETED) if operation[:done]
-      halt(403, NOT_ENOUGH_POINTS) if params[:write_off] > operation[:allowed_write_off]
+      halt(400, CUSTOMER_NOT_FOUND) if user.nil?
+      halt(400, OPERATION_NOT_FOUND) if operation.nil?
+      halt(400, OPERATION_COMPLETED) if operation[:done]
+      halt(400, NOT_ENOUGH_POINTS) if params[:write_off] > operation[:allowed_write_off]
     end
   end
 end

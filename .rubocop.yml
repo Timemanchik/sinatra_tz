@@ -1,5 +1,6 @@
+AllCops:
+  NewCops: disable
 Metrics/BlockLength:
-  IgnoredMethods: ['post']
-  
+  AllowedMethods: ['post']  
 Style/Documentation:
   Enabled: false
